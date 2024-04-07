@@ -54,6 +54,19 @@ var moveNames = [...]string{
 	"DownRight",
 }
 
+type Strategy int
+
+const (
+	Random                  Strategy = iota
+	RandomHVFirstDiagRandom          //first try go horizontal, use Diagonal only if needed. Diagonal move will be random
+	RandomHVFirstDiagInOrder
+	RandomDiagFirstHVRandom
+	RandomDiagFirstHVInOrder
+	StayCloseToBorder
+)
+
+var strategies = []Strategy{Random, RandomHVFirstDiagRandom, RandomHVFirstDiagInOrder, RandomDiagFirstHVRandom, RandomDiagFirstHVInOrder, StayCloseToBorder}
+
 type GameCell struct {
 	val  string
 	xPos int8
@@ -195,6 +208,7 @@ func main() {
 
 	startX := 0
 	startY := 0
+	usedStrategy := RandomHVFirstDiagRandom
 	var paramsErr []error = make([]error, 2)
 
 	if len(os.Args) == 3 {
@@ -219,12 +233,12 @@ func main() {
 	fmt.Println("Initial grid:")
 	fmt.Println(gameTable)
 
-	currCellPtr, movementDone, moveTries, err := takeNextMove(gameTable, currCellPtr)
+	currCellPtr, movementDone, moveTries, err := takeNextMove(gameTable, currCellPtr, usedStrategy)
 	totalTries := moveTries
 
 	for {
 		listOfMoves = append(listOfMoves, moveNames[movementDone])
-		currCellPtr, movementDone, moveTries, err = takeNextMove(gameTable, currCellPtr)
+		currCellPtr, movementDone, moveTries, err = takeNextMove(gameTable, currCellPtr, usedStrategy)
 		totalTries += moveTries
 		if err.GameStatus == NoMoreMoves {
 			break
@@ -237,6 +251,9 @@ func main() {
 	fmt.Println(gameTable)
 	fmt.Println(err)
 	fmt.Println("Final list of Moves:", len(listOfMoves), ")\n", listOfMoves)
+	if currCellPtr.val == "100" {
+		fmt.Println("Solution FOUND! I WON!!!!!!")
+	}
 	fmt.Println("END")
 
 	//TODO: display list of rules
@@ -244,7 +261,7 @@ func main() {
 
 }
 
-func takeNextMove(gameTable GameTable, fromCellPtr *GameCell) (*GameCell, Movement, int, GameStatusErr) {
+func takeNextMove(gameTable GameTable, fromCellPtr *GameCell, strategy Strategy) (*GameCell, Movement, int, GameStatusErr) {
 
 	allMovesMap := make(map[Movement]bool)
 	for _, dir := range allMoves {
@@ -255,7 +272,7 @@ func takeNextMove(gameTable GameTable, fromCellPtr *GameCell) (*GameCell, Moveme
 	var nextMovePtr *Movement
 	var err GameStatusErr
 
-	nextMovePtr, err = getNextFreeMove(allMovesMap)
+	nextMovePtr, err = getNextMoveByStrategy(allMovesMap, fromCellPtr, strategy)
 	tries := 1
 
 	for err.GameStatus != NoMoreMoves {
@@ -267,26 +284,81 @@ func takeNextMove(gameTable GameTable, fromCellPtr *GameCell) (*GameCell, Moveme
 		}
 		allMovesMap[*nextMovePtr] = true
 		tries += 1
-		nextMovePtr, err = getNextFreeMove(allMovesMap)
+		nextMovePtr, err = getNextMoveByStrategy(allMovesMap, currCellPtr, strategy)
 	}
 
 	return fromCellPtr, -1, tries, GameStatusErr{GameStatus: NoMoreMoves, Message: "No more free moves"}
 }
 
-func getNextFreeMove(moves map[Movement]bool) (*Movement, GameStatusErr) {
-	var validMoves []Movement
-	for _, m := range allMoves {
-		if !moves[m] {
-			validMoves = append(validMoves, m)
-		}
-	}
+func getNextMoveByStrategy(moves map[Movement]bool, currCellPtr *GameCell, strategy Strategy) (*Movement, GameStatusErr) {
+	validMoves, sizeValidMoves := getRemainingMoves(moves, allMoves)
 
-	sizeValidMoves := len(validMoves)
 	if sizeValidMoves != 0 {
-		validMove := validMoves[rand.Intn(sizeValidMoves)]
-		return &validMove, GameStatusErr{}
+		var nextMove Movement
+		switch strategy {
+		case Random:
+			nextMove = applyRandomStrategy(validMoves)
+		case RandomHVFirstDiagRandom:
+			nextMove = applyRandomHVFirstDiagRandom(validMoves, currCellPtr)
+		}
+
+		return &nextMove, GameStatusErr{}
 	}
 
 	return nil, GameStatusErr{GameStatus: NoMoreMoves, Message: "No more free moves"}
 
+}
+
+func applyRandomHVFirstDiagRandom(validMoves []Movement, currCellPtr *GameCell) Movement {
+	var crossMoves = []Movement{Up, Down, Right, Left}
+	var diagMoves = []Movement{UpLeft, UpRight, DownLeft, DownRight}
+
+	validCrossMoves := make([]Movement, 0, 4)
+	for _, dir := range crossMoves {
+		if containsMove(validMoves, dir) {
+			validCrossMoves = append(validCrossMoves, dir)
+		}
+	}
+
+	validCrossMovesSize := len(validCrossMoves)
+	if validCrossMovesSize != 0 {
+		return validCrossMoves[rand.Intn(validCrossMovesSize)]
+	}
+
+	//no more cross moves, go to diagonal ones
+
+	validDiagMoves := make([]Movement, 0, 4)
+	for _, dir := range diagMoves {
+		if containsMove(validMoves, dir) {
+			validDiagMoves = append(validDiagMoves, dir)
+		}
+	}
+
+	validDiagMovesSize := len(validDiagMoves)
+
+	// no need to check for the size, 'cause it is a pre-condition that at least we have 1 valid move
+	return validDiagMoves[rand.Intn(validDiagMovesSize)]
+}
+
+func containsMove(validMoves []Movement, dir Movement) bool {
+	for _, item := range validMoves {
+		if item == dir {
+			return true
+		}
+	}
+	return false
+}
+
+func applyRandomStrategy(validMoves []Movement) Movement {
+	return validMoves[rand.Intn(len(validMoves))]
+}
+
+func getRemainingMoves(moves map[Movement]bool, movesList []Movement) ([]Movement, int) {
+	var validMoves []Movement
+	for _, m := range movesList {
+		if !moves[m] {
+			validMoves = append(validMoves, m)
+		}
+	}
+	return validMoves, len(validMoves)
 }
