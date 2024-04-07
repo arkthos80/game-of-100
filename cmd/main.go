@@ -219,11 +219,13 @@ func main() {
 	fmt.Println("Initial grid:")
 	fmt.Println(gameTable)
 
-	currCellPtr, movementDone, err := takeNextMove(gameTable, currCellPtr)
+	currCellPtr, movementDone, moveTries, err := takeNextMove(gameTable, currCellPtr)
+	totalTries := moveTries
 
 	for {
 		listOfMoves = append(listOfMoves, moveNames[movementDone])
-		currCellPtr, movementDone, err = takeNextMove(gameTable, currCellPtr)
+		currCellPtr, movementDone, moveTries, err = takeNextMove(gameTable, currCellPtr)
+		totalTries += moveTries
 		if err.GameStatus == NoMoreMoves {
 			break
 		}
@@ -231,7 +233,7 @@ func main() {
 		//fmt.Println("Current Moves counter: ", len(listOfMoves))
 	}
 
-	fmt.Printf("Result: \n Starting point(x,y): [%d,%d], Moves: %d, Max Value found: %s\n", startX, startY, len(listOfMoves), currCellPtr.val)
+	fmt.Printf("Result: \n\tStarting point(x,y): [%d,%d]\n\tMoves: %d, \n\tTotal # of move tries: %d\n\tMax Value found: %s\n", startX, startY, len(listOfMoves), totalTries, currCellPtr.val)
 	fmt.Println(gameTable)
 	fmt.Println(err)
 	fmt.Println("Final list of Moves:", len(listOfMoves), ")\n", listOfMoves)
@@ -242,7 +244,7 @@ func main() {
 
 }
 
-func takeNextMove(gameTable GameTable, fromCellPtr *GameCell) (*GameCell, Movement, GameStatusErr) {
+func takeNextMove(gameTable GameTable, fromCellPtr *GameCell) (*GameCell, Movement, int, GameStatusErr) {
 
 	allMovesMap := make(map[Movement]bool)
 	for _, dir := range allMoves {
@@ -257,18 +259,18 @@ func takeNextMove(gameTable GameTable, fromCellPtr *GameCell) (*GameCell, Moveme
 	tries := 1
 
 	for err.GameStatus != NoMoreMoves {
-		fmt.Println("Tentative Move", tries)
+		//fmt.Println("Tentative Move", tries)
 		currCellPtr, moveErr := gameTable.move(currCellPtr, *nextMovePtr)
 		if moveErr == nil {
 			//found a valid move, return it
-			return currCellPtr, *nextMovePtr, GameStatusErr{}
+			return currCellPtr, *nextMovePtr, tries, GameStatusErr{}
 		}
 		allMovesMap[*nextMovePtr] = true
 		tries += 1
 		nextMovePtr, err = getNextFreeMove(allMovesMap)
 	}
 
-	return fromCellPtr, -1, GameStatusErr{GameStatus: NoMoreMoves, Message: "No more free moves"}
+	return fromCellPtr, -1, tries, GameStatusErr{GameStatus: NoMoreMoves, Message: "No more free moves"}
 }
 
 func getNextFreeMove(moves map[Movement]bool) (*Movement, GameStatusErr) {
