@@ -3,11 +3,30 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 	"time"
 )
 
 const emptyCellValue string = "_"
+
+type GameStatus int
+
+const (
+	InvalidPosition GameStatus = iota + 1
+	InvalidCellValue
+	CellAlreadyUsed
+	NoMoreMoves
+)
+
+type GameStatusErr struct {
+	GameStatus GameStatus
+	Message    string
+}
+
+func (gse GameStatusErr) Error() string {
+	return gse.Message
+}
 
 type Movement int
 
@@ -22,11 +41,23 @@ const (
 	DownRight
 )
 
+var allMoves = []Movement{Up, Down, Left, Right, DownRight, DownLeft, UpLeft, UpRight}
+
+var moveNames = [...]string{
+	"Up",
+	"Down",
+	"Left",
+	"Right",
+	"UpLeft",
+	"UpRight",
+	"DownLeft",
+	"DownRight",
+}
+
 type GameCell struct {
 	val  string
 	xPos int8
 	yPos int8
-	// HorizontalMovement
 }
 
 type GameTable struct {
@@ -39,18 +70,24 @@ func (g GameTable) move(currCellPtr *GameCell, movement Movement) (*GameCell, er
 	nextX, nextY := getNextPositionByMove(movement, currCellPtr.xPos, currCellPtr.yPos)
 
 	if isOutOfGridBound(nextX, nextY, gridSize) {
-		return &GameCell{}, fmt.Errorf("[%d, %d] is out of grid bounds", nextX, nextY)
+		return nil, GameStatusErr{
+			GameStatus: InvalidPosition,
+			Message:    fmt.Sprintf("[%d, %d] is out of grid bounds", nextX, nextY),
+		}
 	}
 
 	var currValue, err = strconv.Atoi(currCellPtr.val)
 
 	if err != nil {
-		return &GameCell{}, fmt.Errorf("[%s] invalid current cell value", currCellPtr.val)
+		return nil, GameStatusErr{
+			GameStatus: InvalidCellValue,
+			Message:    fmt.Sprintf("[%s] invalid current cell value", currCellPtr.val),
+		}
 	}
 
 	nextValue := currValue + 1
 
-	nextCellPtr := g.lines[nextX][nextY]
+	nextCellPtr := g.lines[nextY][nextX]
 
 	if nextCellPtr.val == emptyCellValue {
 		// empty cell, we can return it
@@ -58,57 +95,62 @@ func (g GameTable) move(currCellPtr *GameCell, movement Movement) (*GameCell, er
 		return nextCellPtr, nil
 	}
 
-	return &GameCell{}, fmt.Errorf("[%d, %d] is not empty. Can't proceed", nextX, nextY)
+	return nil, GameStatusErr{
+		GameStatus: CellAlreadyUsed,
+		Message:    fmt.Sprintf("[%d, %d] is not empty. Can't proceed", nextX, nextY),
+	}
 }
 
 func getNextPositionByMove(dir Movement, x, y int8) (int8, int8) {
 	var nextX, nextY int8
 
+	//fmt.Printf("From position: [%d,%d]\n", x, y)
 	switch dir {
 	case Up:
-		fmt.Println("Move up")
+		//	fmt.Println("Move up")
 		nextX = x
 		nextY = y - 3
 	case Down:
-		fmt.Println("Move down")
+		//	fmt.Println("Move down")
 		nextX = x
 		nextY = y + 3
 	case Left:
-		fmt.Println("Move left")
+		//	fmt.Println("Move left")
 		nextX = x - 3
 		nextY = y
 	case Right:
-		fmt.Println("Move right")
+		//	fmt.Println("Move right")
 		nextX = x + 3
 		nextY = y
 	case UpLeft:
-		fmt.Println("Move diagonally up-left")
+		//	fmt.Println("Move diagonally up-left")
 		nextX = x - 2
 		nextY = y - 2
 	case UpRight:
-		fmt.Println("Move diagonally up-right")
+		//	fmt.Println("Move diagonally up-right")
 		nextX = x + 2
 		nextY = y - 2
 	case DownLeft:
-		fmt.Println("Move diagonally down-left")
+		//	fmt.Println("Move diagonally down-left")
 		nextX = x - 2
 		nextY = y + 2
 	case DownRight:
-		fmt.Println("Move diagonally down-right")
+		//	fmt.Println("Move diagonally down-right")
 		nextX = x + 2
 		nextY = y + 2
 	default:
 		panic("Unknown direction")
 	}
 
+	//fmt.Printf("New position: [%d,%d]\n\n", nextX, nextY)
+
 	return nextX, nextY
 
 }
 
 func isOutOfGridBound(x int8, y int8, gridSize int8) bool {
-	isLeftRightOut := y > gridSize || y < 0
-	isTopBottomOut := x > gridSize || x < 0
-	//TODO: verify check 
+	isLeftRightOut := y >= gridSize || y < 0
+	isTopBottomOut := x >= gridSize || x < 0
 	return isLeftRightOut || isTopBottomOut
 }
 
@@ -116,7 +158,7 @@ func (g GameTable) String() string {
 	result := ""
 	for _, row := range g.lines {
 		for _, cell := range row {
-			result += fmt.Sprintf("|%s| ", cell.val)
+			result += fmt.Sprintf("|%2s| ", cell.val)
 		}
 		result += "\n"
 	}
@@ -133,7 +175,7 @@ func initGameTable(n int, defaultVal string) GameTable {
 	for r := 0; r < n; r++ {
 		var line []*GameCell
 		for i := 0; i < n; i++ {
-			line = append(line, makeCellPtr(defaultVal, int8(r), int8(i)))
+			line = append(line, makeCellPtr(defaultVal, int8(i), int8(r)))
 		}
 		lines = append(lines, line)
 	}
@@ -146,40 +188,103 @@ func setCellValue(gameCell *GameCell, initValue int) {
 }
 
 func main() {
+	if !(len(os.Args) == 3 || len(os.Args) == 1) {
+		fmt.Println("Usage: game100 [X] [Y]")
+		os.Exit(1)
+	}
+
+	startX := 0
+	startY := 0
+	var paramsErr []error = make([]error, 2)
+
+	if len(os.Args) == 3 {
+		startX, paramsErr[0] = strconv.Atoi(os.Args[1])
+		startY, paramsErr[1] = strconv.Atoi(os.Args[2])
+		if paramsErr[0] != nil || paramsErr[1] != nil || isOutOfGridBound(int8(startX), int8(startY), 10) {
+			fmt.Println("invalid starting point: [", os.Args[1], ",", os.Args[2], "]")
+			os.Exit(1)
+		}
+	}
+
 	fmt.Println("Ready to find a solution to the Game Of 100 solitaire!")
 
 	rand.NewSource(time.Now().UnixNano())
 
-	// Generate a random number between 0 and 7 (inclusive) to represent a direction
-	randomMovement := Movement(rand.Intn(8))
-
+	var listOfMoves []string
 	var gameTable = initGameTable(10, "_")
-
-	fmt.Println("Initial grid:")
-	//fmt.Println(grid)
-
 	currValue := 1
-	var currCellPtr = gameTable.lines[5][5]
-
+	var currCellPtr = gameTable.lines[startY][startX]
 	setCellValue(currCellPtr, currValue) //starting point
 
+	fmt.Println("Initial grid:")
 	fmt.Println(gameTable)
-	currValue += 1
 
-	currCell, err := gameTable.move(currCellPtr, randomMovement)
+	currCellPtr, movementDone, err := takeNextMove(gameTable, currCellPtr)
 
-	for err == nil {
-		//setCellValue(currCell, currValue)
-		fmt.Println(gameTable)
-		randomMovement = Movement(rand.Intn(8))
-		currCell, err = gameTable.move(currCell, randomMovement)
-		//currValue += 1
+	for {
+		listOfMoves = append(listOfMoves, moveNames[movementDone])
+		currCellPtr, movementDone, err = takeNextMove(gameTable, currCellPtr)
+		if err.GameStatus == NoMoreMoves {
+			break
+		}
+
+		//fmt.Println("Current Moves counter: ", len(listOfMoves))
 	}
 
+	fmt.Printf("Result: \n Starting point(x,y): [%d,%d], Moves: %d, Max Value found: %s\n", startX, startY, len(listOfMoves), currCellPtr.val)
+	fmt.Println(gameTable)
 	fmt.Println(err)
+	fmt.Println("Final list of Moves:", len(listOfMoves), ")\n", listOfMoves)
 	fmt.Println("END")
 
 	//TODO: display list of rules
 	//showRules()
+
+}
+
+func takeNextMove(gameTable GameTable, fromCellPtr *GameCell) (*GameCell, Movement, GameStatusErr) {
+
+	allMovesMap := make(map[Movement]bool)
+	for _, dir := range allMoves {
+		allMovesMap[dir] = false
+	}
+
+	var currCellPtr = fromCellPtr
+	var nextMovePtr *Movement
+	var err GameStatusErr
+
+	nextMovePtr, err = getNextFreeMove(allMovesMap)
+	tries := 1
+
+	for err.GameStatus != NoMoreMoves {
+		fmt.Println("Tentative Move", tries)
+		currCellPtr, moveErr := gameTable.move(currCellPtr, *nextMovePtr)
+		if moveErr == nil {
+			//found a valid move, return it
+			return currCellPtr, *nextMovePtr, GameStatusErr{}
+		}
+		allMovesMap[*nextMovePtr] = true
+		tries += 1
+		nextMovePtr, err = getNextFreeMove(allMovesMap)
+	}
+
+	return fromCellPtr, -1, GameStatusErr{GameStatus: NoMoreMoves, Message: "No more free moves"}
+}
+
+func getNextFreeMove(moves map[Movement]bool) (*Movement, GameStatusErr) {
+	var validMoves []Movement
+	for _, m := range allMoves {
+		if !moves[m] {
+			validMoves = append(validMoves, m)
+		}
+	}
+
+	sizeValidMoves := len(validMoves)
+	if sizeValidMoves != 0 {
+		validMove := validMoves[rand.Intn(sizeValidMoves)]
+		return &validMove, GameStatusErr{}
+	}
+
+	return nil, GameStatusErr{GameStatus: NoMoreMoves, Message: "No more free moves"}
 
 }
