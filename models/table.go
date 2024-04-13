@@ -23,7 +23,7 @@ func (g Table) String() string {
 	result := ""
 	for _, row := range g.lines {
 		for _, cell := range row {
-			result += fmt.Sprintf("|%2s| ", cell.Val)
+			result += fmt.Sprintf("|%3s| ", cell.Val)
 		}
 		result += "\n"
 	}
