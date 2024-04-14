@@ -4,11 +4,20 @@ type Strategy int
 
 const (
 	Random                   Strategy = iota
-	RandomHVFirstDiagRandom           //first try go horizontal or vertical, use Diagonal only if needed. Diagonal move will be random
+	CrossFirstRandom                  //first try go horizontal or vertical (randomly), use Diagonal only if needed (randomly)
 	RandomHVFirstDiagInOrder          //unimplemented
-	RandomDiagFirstHVRandom           //unimplemented
+	DiagonalFirstRandom               //first try go Diagonal (randomly), use Cross only if needed (randomly)
 	RandomDiagFirstHVInOrder          //unimplemented
 	StayCloseToBorder                 //unimplemented
 )
 
-var strategies = []Strategy{Random, RandomHVFirstDiagRandom, RandomHVFirstDiagInOrder, RandomDiagFirstHVRandom, RandomDiagFirstHVInOrder, StayCloseToBorder}
+var All = []Strategy{Random, CrossFirstRandom, RandomHVFirstDiagInOrder, DiagonalFirstRandom, RandomDiagFirstHVInOrder, StayCloseToBorder}
+
+var AllNames = [...]string{
+	"Random",
+	"CrossFirstRandom",
+	"RandomHVFirstDiagInOrder",
+	"DiagonalFirstRandom",
+	"RandomDiagFirstHVInOrder",
+	"StayCloseToBorder",
+}

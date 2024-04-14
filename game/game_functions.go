@@ -43,8 +43,10 @@ func getNextMoveByStrategy(moves map[models.Movement]bool, strategy strategies.S
 		switch strategy {
 		case strategies.Random:
 			nextMove = applyRandomStrategy(validMoves)
-		case strategies.RandomHVFirstDiagRandom:
-			nextMove = applyRandomHVFirstDiagRandom(validMoves)
+		case strategies.CrossFirstRandom:
+			nextMove = applyCrossFirstRandom(validMoves)
+		case strategies.DiagonalFirstRandom:
+			nextMove = applyDiagonalFirstRandom(validMoves)
 		}
 
 		return &nextMove, models.StatusErr{}
@@ -68,35 +70,49 @@ func applyRandomStrategy(validMoves []models.Movement) models.Movement {
 	return validMoves[rand.Intn(len(validMoves))]
 }
 
-func applyRandomHVFirstDiagRandom(validMoves []models.Movement) models.Movement {
-	var crossMoves = []models.Movement{models.Up, models.Down, models.Right, models.Left}
-	var diagMoves = []models.Movement{models.UpLeft, models.UpRight, models.DownLeft, models.DownRight}
+func applyCrossFirstRandom(validMoves []models.Movement) models.Movement {
 
-	validCrossMoves := make([]models.Movement, 0, 4)
-	for _, dir := range crossMoves {
-		if containsMove(validMoves, dir) {
-			validCrossMoves = append(validCrossMoves, dir)
-		}
-	}
+	validCrossMoves, validCrossMovesSize := remainingMoves(validMoves, models.CrossMoves)
 
-	validCrossMovesSize := len(validCrossMoves)
 	if validCrossMovesSize != 0 {
 		return validCrossMoves[rand.Intn(validCrossMovesSize)]
 	}
 
 	//no more cross moves, go to diagonal ones
 
-	validDiagMoves := make([]models.Movement, 0, 4)
-	for _, dir := range diagMoves {
-		if containsMove(validMoves, dir) {
-			validDiagMoves = append(validDiagMoves, dir)
-		}
-	}
-
-	validDiagMovesSize := len(validDiagMoves)
+	validDiagMoves, validDiagMovesSize := remainingMoves(validMoves, models.DiagonalMoves)
 
 	// no need to check for the size, 'cause it is a pre-condition that at least we have 1 valid move
 	return validDiagMoves[rand.Intn(validDiagMovesSize)]
+}
+
+func applyDiagonalFirstRandom(validMoves []models.Movement) models.Movement {
+	validDiagMoves, validDiagMovesSize := remainingMoves(validMoves, models.DiagonalMoves)
+
+	if validDiagMovesSize != 0 {
+		return validDiagMoves[rand.Intn(validDiagMovesSize)]
+	}
+
+	//no more diagonal moves, go to cross ones
+
+	validCrossMoves, validCrossMovesSize := remainingMoves(validMoves, models.CrossMoves)
+
+	// no need to check for the size, 'cause it is a pre-condition that at least we have 1 valid move
+	return validCrossMoves[rand.Intn(validCrossMovesSize)]
+
+}
+
+func remainingMoves(moves []models.Movement, movesSet []models.Movement) ([]models.Movement, int) {
+	validMoves := make([]models.Movement, 0, 4)
+
+	for _, dir := range movesSet {
+		if containsMove(moves, dir) {
+			validMoves = append(validMoves, dir)
+		}
+	}
+
+	validMovesSize := len(validMoves)
+	return validMoves, validMovesSize
 }
 
 func containsMove(validMoves []models.Movement, dir models.Movement) bool {

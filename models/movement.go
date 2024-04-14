@@ -14,6 +14,8 @@ const (
 )
 
 var AllMoves = []Movement{Up, Down, Left, Right, DownRight, DownLeft, UpLeft, UpRight}
+var CrossMoves = []Movement{Up, Down, Right, Left}
+var DiagonalMoves = []Movement{UpLeft, UpRight, DownLeft, DownRight}
 
 var AllMovesNames = [...]string{
 	"Up",

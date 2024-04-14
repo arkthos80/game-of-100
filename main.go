@@ -12,28 +12,24 @@ import (
 )
 
 func main() {
-	if !(len(os.Args) == 3 || len(os.Args) == 1) {
-		fmt.Println("Usage: game100 [X] [Y] ")
+	if !(len(os.Args) == 5 || len(os.Args) == 3) {
+		fmt.Println("Usage: game100 STRATEGY MAX_TIMEOUT_SEC [X] [Y]")
 		os.Exit(1)
 	}
 
 	startX := 0
 	startY := 0
-	usedStrategy := strategies.RandomHVFirstDiagRandom
-	var paramsErr []error = make([]error, 2)
 
-	if len(os.Args) == 3 {
-		startX, paramsErr[0] = strconv.Atoi(os.Args[1])
-		startY, paramsErr[1] = strconv.Atoi(os.Args[2])
-		if paramsErr[0] != nil || paramsErr[1] != nil || models.IsOutOfBound(int8(startX), int8(startY), 10) {
-			fmt.Println("invalid starting point: [", os.Args[1], ",", os.Args[2], "]")
-			os.Exit(1)
-		}
+	usedStrategy := readStrategy()
+	timeout := readTimeout()
+
+	if len(os.Args) == 5 {
+		startX, startY = readStartPosition()
 	}
 
-	fmt.Println("Ready to find a solution to the Game Of 100 solitaire!")
-	timeout := 10 * time.Second
-	fmt.Println("Max Timeout: " + timeout.String() + " seconds")
+	fmt.Println("Ready to find a solution to the Game Of 100 puzzle!")
+	fmt.Println("Max Timeout: ", timeout.String())
+	fmt.Println("Chosen strategy: ", strategies.AllNames[usedStrategy])
 
 	rand.NewSource(time.Now().UnixNano())
 	maxValueFound := 1
@@ -49,9 +45,11 @@ func main() {
 	var executionCounter = 0
 	var maxValueTable models.Table
 	var maxValueMoves []string
+	const gridSize = 10
+	const fullGridValue = gridSize * gridSize
 
 	for {
-		gameTable = game.InitGameTable(10, "_")
+		gameTable = game.InitGameTable(gridSize, "_")
 		currValue := 1
 		currCellPtr = gameTable.GetCellAt(int8(startX), int8(startY))
 		models.SetCellValue(currCellPtr, currValue)
@@ -60,6 +58,7 @@ func main() {
 		if maxValueFound == 1 {
 			fmt.Println("Initial grid:")
 			fmt.Println(gameTable)
+			fmt.Println("Value to reach: ", fullGridValue)
 		}
 
 		listOfMoves, gameTable, currCellPtr, executionTries, err = GameExecution(gameTable, currCellPtr, usedStrategy)
@@ -70,12 +69,12 @@ func main() {
 
 		if valFound > maxValueFound {
 			maxValueFound = valFound
-			fmt.Println("New MaxValue found: ", maxValueFound)
+			fmt.Printf("New MaxValue %d found after %d executions and %d tries\n", maxValueFound, executionCounter, executionTries)
 			maxValueTable = gameTable
 			maxValueMoves = listOfMoves
 		}
 
-		if maxValueFound == 100 {
+		if maxValueFound == fullGridValue {
 			break
 		}
 
@@ -88,7 +87,7 @@ func main() {
 	fmt.Println(maxValueTable)
 	fmt.Println(err)
 	fmt.Println("Moves:", maxValueMoves)
-	if currCellPtr.Val == "100" {
+	if currCellPtr.Val == strconv.Itoa(fullGridValue) {
 		fmt.Println("Solution FOUND! I WON!!!!!!")
 		fmt.Println("Found in: ", time.Since(startTime).Milliseconds(), " msec")
 	}
