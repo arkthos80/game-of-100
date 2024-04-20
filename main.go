@@ -80,10 +80,11 @@ func main() {
 
 		elapsed := time.Since(startTime)
 		if elapsed > timeout {
-			fmt.Println("Timeout reached")
+			fmt.Println("Timeout reached. Max Value found: ", maxValueFound)
 			break
 		}
 	}
+
 	fmt.Println(maxValueTable)
 	fmt.Println(err)
 	fmt.Println("Moves:", maxValueMoves)

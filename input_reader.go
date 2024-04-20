@@ -10,10 +10,9 @@ import (
 )
 
 func readStrategy() strategies.Strategy {
-	strategyParam, err := strconv.Atoi(os.Args[1])
-	if err != nil || strategyParam < 0 || strategyParam > len(strategies.All) {
+	strategyParam := strategies.GetStrategyByName(os.Args[1])
+	if strategyParam < 0 {
 		fmt.Println("invalid strategy: [", os.Args[1], "]")
-		fmt.Println("Max value: ", len(strategies.All))
 		os.Exit(1)
 	}
 	return strategies.All[strategyParam]

@@ -43,10 +43,12 @@ func getNextMoveByStrategy(moves map[models.Movement]bool, strategy strategies.S
 		switch strategy {
 		case strategies.Random:
 			nextMove = applyRandomStrategy(validMoves)
-		case strategies.CrossFirstRandom:
+		case strategies.CrossFirst:
 			nextMove = applyCrossFirstRandom(validMoves)
-		case strategies.DiagonalFirstRandom:
+		case strategies.DiagonalFirst:
 			nextMove = applyDiagonalFirstRandom(validMoves)
+		default:
+			return nil, models.StatusErr{GameStatus: models.NoMoreMoves, Message: "Can't proceed. Chosen strategy is not implemented"}
 		}
 
 		return &nextMove, models.StatusErr{}
