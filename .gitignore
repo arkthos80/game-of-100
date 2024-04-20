@@ -8,7 +8,7 @@
 *.so
 *.dylib
 
-./game-of-100
+game-of-100
 
 # Test binary, built with `go test -c`
 *.test
