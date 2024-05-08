@@ -6,17 +6,20 @@ const (
 	Random        Strategy = iota //choose a random movement
 	CrossFirst                    //first try go horizontal or vertical (randomly), use Diagonal only if needed (randomly)
 	DiagonalFirst                 //first try go Diagonal (randomly), use Cross only if needed (randomly)
+	//CURRENT BEST PERFORMANCE
+	CloseToBorder                 //next move will be the one that is closer to one of the 4 borders
 	//RandomHVFirstDiagInOrder          //unimplemented
 	//RandomDiagFirstHVInOrder          //unimplemented
-	//StayCloseToBorder                 //unimplemented
+	//CloseToBorder                 //unimplemented
 )
 
-var All = []Strategy{Random, CrossFirst, DiagonalFirst}
+var All = []Strategy{Random, CrossFirst, DiagonalFirst, CloseToBorder}
 
 var AllNames = [...]string{
 	"Random",
 	"CrossFirst",
 	"DiagonalFirst",
+	"CloseToBorder",
 }
 
 // GetStrategyByName returns the enum Strategy corresponding to the given name.

@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/cmd/main.go",
+            "program": "${workspaceFolder}",
             "args": [], 
             "env": {},
             "showLog": true
@@ -19,8 +19,8 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/cmd/main.go",
-            "args": ["2", "9"], 
+            "program": "${workspaceFolder}",
+            "args": ["CloseToBorder", "10"], 
             "env": {},
             "showLog": true
         }

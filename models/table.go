@@ -35,9 +35,9 @@ func (t Table) GetCellAt(x, y int8) *Cell {
 }
 
 func (t Table) Move(currCellPtr *Cell, movement Movement) (*Cell, error) {
-	gridSize := int8(len(t.lines[0]))
+	gridSize := t.GridSize()
 
-	nextX, nextY := getNextPositionByMove(movement, currCellPtr.xPos, currCellPtr.yPos)
+	nextX, nextY := GetNextPositionByMove(movement, currCellPtr.xPos, currCellPtr.yPos)
 
 	if IsOutOfBound(nextX, nextY, gridSize) {
 		return nil, StatusErr{
@@ -71,6 +71,10 @@ func (t Table) Move(currCellPtr *Cell, movement Movement) (*Cell, error) {
 	}
 }
 
+func (t Table) GridSize() int8 {
+	return int8(len(t.lines[0]))
+}
+
 func IsOutOfBound(x int8, y int8, gridSize int8) bool {
 	isLeftRightOut := y >= gridSize || y < 0
 	isTopBottomOut := x >= gridSize || x < 0
@@ -81,7 +85,7 @@ func SetCellValue(gameCell *Cell, initValue int) {
 	gameCell.Val = strconv.Itoa(initValue)
 }
 
-func getNextPositionByMove(dir Movement, x, y int8) (int8, int8) {
+func GetNextPositionByMove(dir Movement, x, y int8) (int8, int8) {
 	var nextX, nextY int8
 
 	//fmt.Printf("From position: [%d,%d]\n", x, y)
