@@ -43,7 +43,7 @@ func DoNextMove(gameTable models.Table, fromCellPtr *models.Cell, strategy strat
 	return fromCellPtr, -1, tries, models.StatusErr{GameStatus: models.NoMoreMoves, Message: "No more free moves"}
 }
 
-func getNextMoveByStrategy(gridSize int8, currCellPtr *models.Cell, moves map[models.Movement]bool, strategy strategies.Strategy) (*models.Movement, models.StatusErr) {
+func getNextMoveByStrategy(gridSize int, currCellPtr *models.Cell, moves map[models.Movement]bool, strategy strategies.Strategy) (*models.Movement, models.StatusErr) {
 	validMoves, sizeValidMoves := getValidMoves(moves, models.AllMoves)
 
 	if sizeValidMoves != 0 {
@@ -114,7 +114,7 @@ func applyDiagonalFirst(validMoves []models.Movement) models.Movement {
 
 }
 
-func applyCloseToBorder(gridSize int8, currCellPtr *models.Cell, validMoves []models.Movement) models.Movement {
+func applyCloseToBorder(gridSize int, currCellPtr *models.Cell, validMoves []models.Movement) models.Movement {
 	x, y := currCellPtr.GetPosition()
 
 	closerX, closerY := x, y
@@ -140,7 +140,7 @@ func applyCloseToBorder(gridSize int8, currCellPtr *models.Cell, validMoves []mo
 	return validMoves[closerMoveIdx]
 }
 
-func isCloserToBorder(gridSize int8, newX, newY, oldX, oldY int8) bool {
+func isCloserToBorder(gridSize, newX, newY, oldX, oldY int) bool {
 	// Calculate distances to borders
 	newDistX := minimum(newX, gridSize-newX) // Distance to left or right border
 	newDistY := minimum(newY, gridSize-newY) // Distance to top or bottom border
@@ -151,7 +151,7 @@ func isCloserToBorder(gridSize int8, newX, newY, oldX, oldY int8) bool {
 	return newDistX < oldDistX || newDistY < oldDistY
 }
 
-func minimum(a, b int8) float64 {
+func minimum(a, b int) float64 {
 	return math.Min(float64(a), float64(b))
 }
 

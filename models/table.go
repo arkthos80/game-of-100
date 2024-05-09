@@ -6,6 +6,7 @@ import (
 )
 
 const emptyCellValue string = "_"
+const DefaultGridSize int = 10
 
 type TableBehaviour interface {
 	Move(*Cell, Movement) (*Cell, error)
@@ -30,7 +31,7 @@ func (g Table) String() string {
 	return result
 }
 
-func (t Table) GetCellAt(x, y int8) *Cell {
+func (t Table) GetCellAt(x, y int) *Cell {
 	return t.lines[y][x]
 }
 
@@ -71,11 +72,11 @@ func (t Table) Move(currCellPtr *Cell, movement Movement) (*Cell, error) {
 	}
 }
 
-func (t Table) GridSize() int8 {
-	return int8(len(t.lines[0]))
+func (t Table) GridSize() int {
+	return len(t.lines[0])
 }
 
-func IsOutOfBound(x int8, y int8, gridSize int8) bool {
+func IsOutOfBound(x, y int, gridSize int) bool {
 	isLeftRightOut := y >= gridSize || y < 0
 	isTopBottomOut := x >= gridSize || x < 0
 	return isLeftRightOut || isTopBottomOut
@@ -85,8 +86,8 @@ func SetCellValue(gameCell *Cell, initValue int) {
 	gameCell.Val = strconv.Itoa(initValue)
 }
 
-func GetNextPositionByMove(dir Movement, x, y int8) (int8, int8) {
-	var nextX, nextY int8
+func GetNextPositionByMove(dir Movement, x, y int) (int, int) {
+	var nextX, nextY int
 
 	//fmt.Printf("From position: [%d,%d]\n", x, y)
 	switch dir {

@@ -27,15 +27,24 @@ func readTimeout() time.Duration {
 	return time.Duration(timeoutParam) * time.Second
 }
 
-func readStartPosition() (int, int) {
+func readStartPosition(gridSize int) (int, int) {
 	var paramsErr []error = make([]error, 2)
 	var x, y int
 	x, paramsErr[0] = strconv.Atoi(os.Args[3])
 	y, paramsErr[1] = strconv.Atoi(os.Args[4])
-	if paramsErr[0] != nil || paramsErr[1] != nil || models.IsOutOfBound(int8(x), int8(y), 10) {
+	if paramsErr[0] != nil || paramsErr[1] != nil || models.IsOutOfBound(x, y, gridSize) {
 		fmt.Println("invalid starting point: [", os.Args[3], ",", os.Args[4], "]")
 		os.Exit(1)
 	}
 
 	return x, y
+}
+
+func readGridSize() int {
+	customGridSize, err := strconv.Atoi(os.Args[5])
+	if err != nil || customGridSize < 4 {
+		fmt.Println("invalid grid size: [", os.Args[5], "]")
+		os.Exit(1)
+	}
+	return customGridSize
 }

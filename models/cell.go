@@ -2,14 +2,14 @@ package models
 
 type Cell struct {
 	Val  string
-	xPos int8
-	yPos int8
+	xPos int
+	yPos int
 }
 
-func (c Cell) GetPosition() (int8, int8){
+func (c Cell) GetPosition() (int, int){
 	return c.xPos,c.yPos
 }
 
-func MakeCellPtr(val string, xPos, yPos int8) *Cell {
+func MakeCellPtr(val string, xPos, yPos int) *Cell {
 	return &Cell{Val: val, xPos: xPos, yPos: yPos}
 }

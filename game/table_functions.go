@@ -10,7 +10,7 @@ func InitGameTable(n int, defaultVal string) models.Table {
 	for r := 0; r < n; r++ {
 		var line []*models.Cell
 		for i := 0; i < n; i++ {
-			line = append(line, models.MakeCellPtr(defaultVal, int8(i), int8(r)))
+			line = append(line, models.MakeCellPtr(defaultVal, i, r))
 		}
 		lines = append(lines, line)
 	}
